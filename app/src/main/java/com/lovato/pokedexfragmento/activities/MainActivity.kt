@@ -3,6 +3,7 @@ package com.lovato.pokedexfragmento.activities
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -17,15 +18,20 @@ import com.lovato.pokedexfragmento.fragments.MainContentFragment
 import com.lovato.pokedexfragmento.fragments.MainListFragment
 import com.lovato.pokedexfragmento.models.Pokemon
 import com.lovato.pokedexfragmento.utilities.NetworkUtils
+import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.pokemon_list_fragment.*
 import kotlinx.android.synthetic.main.pokemon_list_fragment.view.*
+import kotlinx.android.synthetic.main.viewer_element_pokemon.*
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.net.MalformedURLException
+import java.net.URL
 
 
-class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListener {
+class MainActivity : AppCompatActivity(), MainListFragment.SearchNewPokemonListener {
 
-    private lateinit var mainFragment : MainListFragment
+    private lateinit var mainFragment: MainListFragment
     private lateinit var mainContentFragment: MainContentFragment
 
     private var pokeList = ArrayList<Pokemon>()
@@ -35,7 +41,7 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         pokeList = savedInstanceState?.getParcelableArrayList(AppConstants.dataset_saveinstance_key) ?: ArrayList()
-        FetchPokemonTask()
+
         initMainFragment()
 
 
@@ -49,10 +55,10 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
         println("---------------------------------")
     }
 
-    fun initMainFragment(){
+    fun initMainFragment() {
         mainFragment = MainListFragment.newInstance(pokeList)
 
-        val resource = if(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+        val resource = if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
             R.id.main_fragment
         else {
             mainContentFragment = MainContentFragment.newInstance(Pokemon())
@@ -69,7 +75,7 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
 
     fun addPokemonToList(pokemon: Pokemon) {
         pokeList.add(pokemon)
-        mainFragment.updateMoviesAdapter(pokeList)
+        mainFragment.updatePokemonAdapter(pokeList)
         println(pokeList)
         //Limpiar
         Log.d("Number", pokeList.size.toString())
@@ -82,7 +88,9 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
         startActivity(Intent(this, PokemonViewer::class.java).putExtra("CLAVIER", pokemon.url))
     }
 
-    private fun changeFragment(id: Int, frag: Fragment){ supportFragmentManager.beginTransaction().replace(id, frag).commit() }
+    private fun changeFragment(id: Int, frag: Fragment) {
+        supportFragmentManager.beginTransaction().replace(id, frag).commit()
+    }
 
     override fun manageLandscapeItemClick(pokemon: Pokemon) {
         mainContentFragment = MainContentFragment.newInstance(pokemon)
@@ -90,59 +98,13 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
     }
 
 
-    override fun searchPokemon(pokeId: String){
+    override fun searchPokemon(pokeId: String) {
+        searchbar.setText("")
         QueryPokemonTask().execute(pokeId)
+
     }
 
 
-
-    private inner class FetchPokemonTask : AsyncTask<String, Void, String>() {
-
-        override fun doInBackground(vararg query: String): String {
-
-            if (query.isNullOrEmpty()) return ""
-
-            val ID = query[0]
-            val pokeAPI = NetworkUtils().buildUrl("pokemon",ID)
-
-            return try {
-                NetworkUtils().getResponseFromHttpUrl(pokeAPI)
-            } catch (e: IOException) {
-                e.printStackTrace()
-                ""
-            }
-
-        }
-
-        override fun onPostExecute(pokemonInfo: String) {
-            pokeList.clear()
-            val pokemon = if (!pokemonInfo.isEmpty()) {
-                val root = JSONObject(pokemonInfo)
-                val results = root.getJSONArray("results")
-                MutableList(20) { i ->
-                    val result = JSONObject(results[i].toString())
-
-
-                    addPokemonToList(Pokemon(i,
-                        result.getString("name").capitalize(),
-                        R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(),
-                        result.getString("url"),
-                        R.string.n_a_value.toString()))
-                }
-
-
-            } else {
-                MutableList(20) { i ->
-                    Pokemon(i, R.string.n_a_value.toString(), R.string.n_a_value.toString(), R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(), R.string.n_a_value.toString(), R.string.n_a_value.toString(), R.string.n_a_value.toString())
-                }
-            }
-
-        }
-    }
 
     private inner class QueryPokemonTask : AsyncTask<String, Void, String>() {
 
@@ -151,7 +113,7 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
             if (query.isNullOrEmpty()) return ""
 
             val ID = query[0]
-            val pokeAPI = NetworkUtils().buildUrl("type",ID)
+            val pokeAPI = NetworkUtils().buildUrl("type", ID)
 
             return try {
                 NetworkUtils().getResponseFromHttpUrl(pokeAPI)
@@ -164,28 +126,40 @@ class MainActivity : AppCompatActivity(), MainListFragment.SearchNewMovieListene
 
         override fun onPostExecute(pokemonInfo: String) {
             pokeList.clear()
-            val pokemon = if (!pokemonInfo.isEmpty()) {
+            if (!pokemonInfo.isEmpty()) {
                 val root = JSONObject(pokemonInfo)
                 val results = root.getJSONArray("pokemon")
                 MutableList(20) { i ->
                     val resulty = JSONObject(results[i].toString())
                     val result = JSONObject(resulty.getString("pokemon"))
 
-                    addPokemonToList(Pokemon(i,
-                        result.getString("name").capitalize(),
-                        R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(),
-                        result.getString("url"),
-                        R.string.n_a_value.toString()))
+                    addPokemonToList(
+                        Pokemon(
+                            i,
+                            result.getString("name").capitalize(),
+                            R.string.n_a_value.toString(),
+                            R.string.n_a_value.toString(),
+                            R.string.n_a_value.toString(),
+                            R.string.n_a_value.toString(),
+                            result.getString("url"),
+                            R.string.n_a_value.toString()
+                        )
+                    )
 
 
                 }
             } else {
                 MutableList(20) { i ->
-                    Pokemon(i, R.string.n_a_value.toString(), R.string.n_a_value.toString(), R.string.n_a_value.toString(),
-                        R.string.n_a_value.toString(), R.string.n_a_value.toString(), R.string.n_a_value.toString(), R.string.n_a_value.toString())
+                    Pokemon(
+                        i,
+                        R.string.n_a_value.toString(),
+                        R.string.n_a_value.toString(),
+                        R.string.n_a_value.toString(),
+                        R.string.n_a_value.toString(),
+                        R.string.n_a_value.toString(),
+                        R.string.n_a_value.toString(),
+                        R.string.n_a_value.toString()
+                    )
                 }
             }
 

@@ -46,7 +46,7 @@ class PokemonViewer : AppCompatActivity() {
         sndType.text = pokemon.sndtype
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected( item: MenuItem?): Boolean {
         return when (item!!.itemId) {
             android.R.id.home -> {
                 onBackPressed();true

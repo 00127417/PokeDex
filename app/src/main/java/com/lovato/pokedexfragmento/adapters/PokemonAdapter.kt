@@ -31,7 +31,6 @@ class PokemonAdapter(var items: List<Pokemon>, val clickListener: (Pokemon) -> U
         fun bind(item: Pokemon, clickListener: (Pokemon) -> Unit) = with(itemView) {
             tv_pokemon_id.text = item.id.toString()
             tv_pokemon_name.text = item.name
-            tv_pokemon_type.text = item.url
             this.setOnClickListener { clickListener(item) }
         }
     }

@@ -18,15 +18,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="7"
-                android:hint="Query" />
+                android:hint="Insert pokemon type number" />
 
-        <ImageView
-                android:id="@+id/searchbarclearbutton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_outline_cancel"
-                android:tint="@color/gray" />
 
         <Button
                 android:id="@+id/searchbarbutton"

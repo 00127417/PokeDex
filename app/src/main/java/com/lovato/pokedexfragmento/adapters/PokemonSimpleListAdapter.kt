@@ -28,7 +28,6 @@ class PokemonSimpleListAdapter(var items: List<Pokemon>, val clickListener: (Pok
         fun bind(item: Pokemon, clickListener: (Pokemon) -> Unit) = with(itemView) {
             tv_pokemon_id_ip.text = item.id.toString()
             tv_pokemon_name_ip.text = item.name
-            tv_pokemon_type_ip.text = item.url
             this.setOnClickListener { clickListener(item) }
         }
     }
